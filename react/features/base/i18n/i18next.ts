@@ -97,7 +97,10 @@ const options: i18next.InitOptions = {
 };
 
 i18next
-    .use(navigator.product === 'ReactNative' ? {} : I18nextXHRBackend)
+.use(navigator.product === 'ReactNative'
+? require('react-i18next').initReactI18next
+: I18nextXHRBackend)
+
     .use(languageDetector)
     .init(options);
 
