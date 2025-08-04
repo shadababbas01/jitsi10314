@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import { once } from 'lodash-es';
 import { connect } from 'react-redux';
 
 import { createToolbarEvent } from '../../analytics/AnalyticsEvents';
@@ -20,9 +20,9 @@ import { getParticipantCountRemoteOnly } from '../../base/participants/functions
 class HangupButton extends AbstractHangupButton<AbstractButtonProps> {
     _hangup: Function;
 
-    accessibilityLabel = 'toolbar.accessibilityLabel.hangup';
-    label = 'toolbar.hangup';
-    tooltip = 'toolbar.hangup';
+    override accessibilityLabel = 'toolbar.accessibilityLabel.hangup';
+    override label = 'toolbar.hangup';
+    override tooltip = 'toolbar.hangup';
 
     /**
      * Initializes a new HangupButton instance.
@@ -33,7 +33,7 @@ class HangupButton extends AbstractHangupButton<AbstractButtonProps> {
     constructor(props: AbstractButtonProps) {
         super(props);
 
-        this._hangup = _.once(() => {
+        this._hangup = once(() => {
             sendAnalytics(createToolbarEvent('hangup'));
             this.props.dispatch(leaveConference());
         });
@@ -46,6 +46,7 @@ class HangupButton extends AbstractHangupButton<AbstractButtonProps> {
      * @protected
      * @returns {void}
      */
+// <<<<<<< HEAD
     _doHangup() {
         // NativeModules.NativeCallsNew.hangup();
         // this._hangup();
@@ -72,6 +73,10 @@ class HangupButton extends AbstractHangupButton<AbstractButtonProps> {
         } else {
             return super._getView(props);
         }
+// =======
+//     override _doHangup() {
+//         this._hangup();
+// >>>>>>> stable/jitsi-meet_10314
     }
 }
 function _mapStateToProps(state) {

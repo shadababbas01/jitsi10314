@@ -38,7 +38,7 @@ import { startKnocking } from '../../../lobby/actions.any';
 import { getIsLobbyVisible } from '../../../lobby/functions';
 import { navigate }
     from '../../../mobile/navigation/components/conference/ConferenceNavigationContainerRef';
-import { shouldEnableAutoKnock } from '../../../mobile/navigation/functions';
+// import { shouldEnableAutoKnock } from '../../../mobile/navigation/functions';
 import { screen } from '../../../mobile/navigation/routes';
 import { setPictureInPictureEnabled } from '../../../mobile/picture-in-picture/functions';
 import Captions from '../../../subtitles/components/native/Captions';
@@ -146,7 +146,7 @@ type Props = AbstractProps & {
     /**
      * Indicates if we should auto-knock.
      */
-    _shouldEnableAutoKnock: boolean,
+    // _shouldEnableAutoKnock: boolean,
 
     /**
      * Indicates whether the lobby screen should be visible.
@@ -244,7 +244,7 @@ class Conference extends AbstractConference<Props, State> {
      */
     componentDidUpdate(prevProps) {
         const {
-            _shouldEnableAutoKnock,
+            // _shouldEnableAutoKnock,
             _showLobby,
             dispatch
         } = this.props;
@@ -252,9 +252,9 @@ class Conference extends AbstractConference<Props, State> {
         if (!prevProps._showLobby && _showLobby) {
             navigate(screen.lobby.root);
 
-            if (_shouldEnableAutoKnock) {
-                dispatch(startKnocking());
-            }
+            // if (_shouldEnableAutoKnock) {
+            //     dispatch(startKnocking());
+            // }
         }
 
         if (prevProps._showLobby && !_showLobby) {
@@ -283,6 +283,7 @@ class Conference extends AbstractConference<Props, State> {
      * @inheritdoc
      * @returns {ReactElement}
      */
+    
     render() {
         const {
             _brandingStyles,
@@ -308,7 +309,7 @@ class Conference extends AbstractConference<Props, State> {
         );
     }
 
-    _onClick: () => void;
+    // _onClick: () => void;
 
     /**
      * Changes the value of the toolboxVisible state, thus allowing us to switch
@@ -338,7 +339,7 @@ class Conference extends AbstractConference<Props, State> {
         this.lastClickTime = currentTime;
     }
 
-    _onHardwareBackPress: () => boolean;
+    // _onHardwareBackPress: () => boolean;
 
     /**
      * Handles a hardware button press for back navigation. Enters Picture-in-Picture mode
@@ -364,7 +365,7 @@ class Conference extends AbstractConference<Props, State> {
         return true;
     }
 
-    _createOnPress: (string) => void;
+    // _createOnPress: (string) => void;
 
     /**
      * Creates a function to be invoked when the onPress of the touchables are
@@ -589,7 +590,7 @@ class Conference extends AbstractConference<Props, State> {
         );
     }
 
-    _setToolboxVisible: (boolean) => void;
+    // _setToolboxVisible: (boolean) => void;
 
     /**
      * Dispatches an action changing the visibility of the {@link Toolbox}.
@@ -640,7 +641,7 @@ function _mapStateToProps(state) {
         _largeVideoParticipantId: state['features/large-video'].participantId,
         _pictureInPictureEnabled: getFeatureFlag(state, PIP_ENABLED),
         _reducedUI: reducedUI,
-        _shouldEnableAutoKnock: shouldEnableAutoKnock(state),
+        // _shouldEnableAutoKnock: shouldEnableAutoKnock(state),
         _showLobby: getIsLobbyVisible(state),
         _startCarMode: startCarMode,
         _toolboxVisible: isToolboxVisible(state),

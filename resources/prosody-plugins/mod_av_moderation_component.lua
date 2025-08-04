@@ -4,6 +4,7 @@ local is_healthcheck_room = util.is_healthcheck_room;
 local internal_room_jid_match_rewrite = util.internal_room_jid_match_rewrite;
 local room_jid_match_rewrite = util.room_jid_match_rewrite;
 local process_host_module = util.process_host_module;
+local table_shallow_copy = util.table_shallow_copy;
 local array = require "util.array";
 local json = require 'cjson.safe';
 local st = require 'util.stanza';
@@ -47,7 +48,7 @@ function notify_occupants_enable(jid, enable, room, actorJid, mediaType)
     body_json.type = 'av_moderation';
     body_json.enabled = enable;
     body_json.room = internal_room_jid_match_rewrite(room.jid);
-    body_json.actor = actorJid;
+    body_json.actor = internal_room_jid_match_rewrite(actorJid);
     body_json.mediaType = mediaType;
     local body_json_str, error = json.encode(body_json);
 
@@ -75,11 +76,20 @@ function notify_whitelist_change(jid, moderators, room, mediaType, removed)
     local body_json = {};
     body_json.type = 'av_moderation';
     body_json.room = internal_room_jid_match_rewrite(room.jid);
-    body_json.whitelists = room.av_moderation;
+    -- we will be modifying it, so we need a copy
+    body_json.whitelists = table_shallow_copy(room.av_moderation);
     if removed then
         body_json.removed = true;
     end
     body_json.mediaType = mediaType;
+
+    -- sanitize, make sure we don't have an empty array as it will encode it as {} not as []
+    for _,mediaType in pairs({'audio', 'video'}) do
+        if body_json.whitelists[mediaType] and #body_json.whitelists[mediaType] == 0 then
+            body_json.whitelists[mediaType] = nil;
+        end
+    end
+
     local moderators_body_json_str, error = json.encode(body_json);
 
     if not moderators_body_json_str then
@@ -197,6 +207,20 @@ function on_message(event)
                         room.av_moderation_actors = {};
                     end
                     room.av_moderation[mediaType] = array{};
+
+                    -- We want to set startMuted policy in metadata, in case of new participants are joining to respect
+                    -- it, that will be enforced by jicofo
+                    local startMutedMetadata = room.jitsiMetadata.startMuted or {};
+
+                    -- We want to keep the previous value of startMuted for this mediaType if av moderation is disabled
+                    -- to be able to restore
+                    local av_moderation_startMuted_restore = room.av_moderation_startMuted_restore or {};
+                    av_moderation_startMuted_restore = startMutedMetadata[mediaType];
+                    room.av_moderation_startMuted_restore = av_moderation_startMuted_restore;
+
+                    startMutedMetadata[mediaType] = true;
+                    room.jitsiMetadata.startMuted = startMutedMetadata;
+
                     room.av_moderation_actors[mediaType] = occupant.nick;
                 end
             else
@@ -208,7 +232,11 @@ function on_message(event)
                     room.av_moderation[mediaType] = nil;
                     room.av_moderation_actors[mediaType] = nil;
 
-                    -- clears room.av_moderation if empty
+                    local startMutedMetadata = room.jitsiMetadata.startMuted or {};
+                    local av_moderation_startMuted_restore = room.av_moderation_startMuted_restore or {};
+                    startMutedMetadata[mediaType] = av_moderation_startMuted_restore[mediaType];
+                    room.jitsiMetadata.startMuted = startMutedMetadata;
+
                     local is_empty = true;
                     for key,_ in pairs(room.av_moderation) do
                         if room.av_moderation[key] then

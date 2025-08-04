@@ -1,5 +1,5 @@
 import { sha512_256 as sha512 } from 'js-sha512';
-import _ from 'lodash';
+import { upperFirst, words } from 'lodash-es';
 
 import { getName } from '../../app/functions';
 import { IReduxState, IStore } from '../../app/types';
@@ -7,8 +7,6 @@ import { determineTranscriptionLanguage } from '../../transcribing/functions';
 import { IStateful } from '../app/types';
 import { JitsiTrackErrors } from '../lib-jitsi-meet';
 import {
-    hiddenParticipantJoined,
-    hiddenParticipantLeft,
     participantJoined,
     participantLeft
 } from '../participants/actions';
@@ -37,14 +35,6 @@ import { getConferenceInfo } from '../../conference/components/functions.any';
  * @returns {Object} Conference state.
  */
 export const getConferenceState = (state: IReduxState) => state['features/base/conference'];
-
-/**
- * Is the conference joined or not.
- *
- * @param {IReduxState} state - Global state.
- * @returns {boolean}
- */
-export const getIsConferenceJoined = (state: IReduxState) => Boolean(getConferenceState(state).conference);
 
 /**
  * Attach a set of local tracks to a conference.
@@ -94,18 +84,20 @@ export function commonUserJoinedHandling(
     const id = user.getId();
     const displayName = user.getDisplayName();
 
-    if (user.isHidden()) {
-        dispatch(hiddenParticipantJoined(id, displayName));
-    } else {
+    if (!user.isHidden()) {
         const isReplacing = user?.isReplacing();
+        const isPromoted = conference?.getMetadataHandler().getMetadata()?.visitors?.promoted?.[id];
 
+        // the identity and avatar come from jwt and never change in the presence
         dispatch(participantJoined({
+            avatarURL: user.getIdentity()?.user?.avatar,
             botType: user.getBotType(),
             conference,
             id,
             name: displayName,
             presence: user.getStatus(),
             role: user.getRole(),
+            isPromoted,
             isReplacing,
             sources: user.getSources()
         }));
@@ -129,9 +121,7 @@ export function commonUserLeftHandling(
         user: any) {
     const id = user.getId();
 
-    if (user.isHidden()) {
-        dispatch(hiddenParticipantLeft(id));
-    } else {
+    if (!user.isHidden()) {
         const isReplaced = user.isReplaced?.();
 
         dispatch(participantLeft(id, conference, { isReplaced }));
@@ -197,8 +187,6 @@ export function getConferenceName(stateful: IStateful): string {
         || pendingSubjectChange
         || configSubject
         || subject
-        || configLocalSubject
-        || localSubject
         || callDisplayName
         || callee?.name
         || (room && safeStartCase(safeDecodeURIComponent(room)))) ?? '';
@@ -226,6 +214,7 @@ export function getConferenceOptions(stateful: IStateful) {
 
     const config = state['features/base/config'];
     const { locationURL } = state['features/base/connection'];
+    const { defaultTranscriptionLanguage } = state['features/dynamic-branding'];
     const { tenant } = state['features/base/jwt'];
     const { email, name: nick } = getLocalParticipant(state) ?? {};
     const options: any = { ...config };
@@ -247,13 +236,13 @@ export function getConferenceOptions(stateful: IStateful) {
     }
 
     options.applicationName = getName();
-    options.transcriptionLanguage = determineTranscriptionLanguage(options);
+    options.transcriptionLanguage
+        = defaultTranscriptionLanguage ?? determineTranscriptionLanguage(options);
 
     // Disable analytics, if requested.
     if (options.disableThirdPartyRequests) {
         delete config.analytics?.scriptURLs;
         delete config.analytics?.amplitudeAPPKey;
-        delete config.analytics?.googleAnalyticsTrackingId;
     }
 
     return options;
@@ -312,7 +301,7 @@ export function getVisitorOptions(stateful: IStateful, vnode: string, focusJid: 
             return {
                 hosts: config.oldConfig.hosts,
                 focusUserJid: focusJid,
-                disableLocalStats: false,
+                disableLocalStatsBroadcast: false,
                 bosh: config.oldConfig.bosh && appendURLParam(config.oldConfig.bosh, 'customusername', username),
                 p2p: config.oldConfig.p2p,
                 websocket: config.oldConfig.websocket
@@ -347,7 +336,7 @@ export function getVisitorOptions(stateful: IStateful, vnode: string, focusJid: 
         },
         focusUserJid: focusJid,
         disableFocus: true, // This flag disables sending the initial conference request
-        disableLocalStats: true,
+        disableLocalStatsBroadcast: true,
         bosh: config.bosh && appendURLParam(config.bosh, 'vnode', vnode),
         p2p: {
             ...config.p2p,
@@ -640,7 +629,7 @@ export function sendLocalParticipant(
  * @returns {string}
  */
 function safeStartCase(s = '') {
-    return _.words(`${s}`.replace(/['\u2019]/g, '')).reduce(
-        (result, word, index) => result + (index ? ' ' : '') + _.upperFirst(word)
+    return words(`${s}`.replace(/['\u2019]/g, '')).reduce(
+        (result, word, index) => result + (index ? ' ' : '') + upperFirst(word)
         , '');
 }

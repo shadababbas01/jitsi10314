@@ -1,11 +1,15 @@
 import { IReduxState } from '../app/types';
 import { IStateful } from '../base/app/types';
-import { hasAvailableDevices } from '../base/devices/functions';
+import { hasAvailableDevices } from '../base/devices/functions.native';
 import { TOOLBOX_ALWAYS_VISIBLE, TOOLBOX_ENABLED } from '../base/flags/constants';
 import { getFeatureFlag } from '../base/flags/functions';
 import { getParticipantCountWithFake } from '../base/participants/functions';
 import { toState } from '../base/redux/functions';
-import { isLocalVideoTrackDesktop } from '../base/tracks/functions';
+import { isLocalVideoTrackDesktop } from '../base/tracks/functions.native';
+
+import { MAIN_TOOLBAR_BUTTONS_PRIORITY } from './constants';
+import { isButtonEnabled } from './functions.any';
+import { IGetVisibleNativeButtonsParams, IToolboxNativeButton } from './types';
 
 export * from './functions.any';
 
@@ -15,15 +19,13 @@ const WIDTH = {
     FIT_7_ICONS: 440,
     FIT_6_ICONS: 380
 };
-
 /**
- * Returns a set of the buttons that are shown in the toolbar
- * but removed from the overflow menu, based on the width of the screen.
+ * Indicates if the desktop share button is disabled or not.
  *
- * @param {number} width - The width of the screen.
- * @returns {Set}
+ * @param {IReduxState} state - The state from the Redux store.
+ * @returns {boolean}
  */
-export function getMovableButtons(width: number): Set<string> {
+ export function getMovableButtons(width: number): Set<string> {
     let buttons: string[] = [];
 
     switch (true) {
@@ -53,13 +55,6 @@ export function getMovableButtons(width: number): Set<string> {
 
     return new Set(buttons);
 }
-
-/**
- * Indicates if the desktop share button is disabled or not.
- *
- * @param {IReduxState} state - The state from the Redux store.
- * @returns {boolean}
- */
 export function isDesktopShareButtonDisabled(state: IReduxState) {
     const { muted, unmuteBlocked } = state['features/base/media'].video;
     const videoOrShareInProgress = !muted || isLocalVideoTrackDesktop(state);
@@ -97,6 +92,66 @@ export function isVideoMuteButtonDisabled(state: IReduxState) {
     const { muted, unmuteBlocked } = state['features/base/media'].video;
 
     return !hasAvailableDevices(state, 'videoInput')
-        || (unmuteBlocked && Boolean(muted))
-        || isLocalVideoTrackDesktop(state);
+        || (unmuteBlocked && Boolean(muted));
+}
+
+
+/**
+ * Returns all buttons that need to be rendered.
+ *
+ * @param {IGetVisibleButtonsParams} params - The parameters needed to extract the visible buttons.
+ * @returns {Object} - The visible buttons arrays .
+ */
+export function getVisibleNativeButtons(
+        { allButtons, clientWidth, mainToolbarButtonsThresholds, toolbarButtons }: IGetVisibleNativeButtonsParams) {
+    const filteredButtons = Object.keys(allButtons).filter(key =>
+        typeof key !== 'undefined' // filter invalid buttons that may be coming from config.mainToolbarButtons override
+        && isButtonEnabled(key, toolbarButtons));
+
+    const { order } = mainToolbarButtonsThresholds.find(({ width }) => clientWidth > width)
+    || mainToolbarButtonsThresholds[mainToolbarButtonsThresholds.length - 1];
+
+    const mainToolbarButtonKeysOrder = [
+        ...order.filter(key => filteredButtons.includes(key)),
+        ...MAIN_TOOLBAR_BUTTONS_PRIORITY.filter(key => !order.includes(key) && filteredButtons.includes(key)),
+        ...filteredButtons.filter(key => !order.includes(key) && !MAIN_TOOLBAR_BUTTONS_PRIORITY.includes(key))
+    ];
+
+    const mainButtonsKeys = mainToolbarButtonKeysOrder.slice(0, order.length);
+    const overflowMenuButtons = filteredButtons.reduce((acc, key) => {
+        if (!mainButtonsKeys.includes(key)) {
+            acc.push(allButtons[key]);
+        }
+
+        return acc;
+    }, [] as IToolboxNativeButton[]);
+
+    // if we have 1 button in the overflow menu it is better to directly display it in the main toolbar by replacing
+    // the "More" menu button with it.
+    if (overflowMenuButtons.length === 1) {
+        const button = overflowMenuButtons.shift()?.key;
+
+        button && mainButtonsKeys.push(button);
+    }
+
+    const mainMenuButtons
+        = mainButtonsKeys.map(key => allButtons[key]).sort((a, b) => {
+
+            // Native toolbox includes hangup and overflowmenu button keys, too
+            // hangup goes last, overflowmenu goes second-to-last
+            if (a.key === 'hangup' || a.key === 'overflowmenu') {
+                return 1;
+            }
+
+            if (b.key === 'hangup' || b.key === 'overflowmenu') {
+                return -1;
+            }
+
+            return 0; // other buttons are sorted by priority
+        });
+
+    return {
+        mainMenuButtons,
+        overflowMenuButtons
+    };
 }

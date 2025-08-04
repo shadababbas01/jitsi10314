@@ -14,11 +14,13 @@ import {
     requestEnableVideoModeration
 } from '../../react/features/av-moderation/actions';
 import { isEnabledFromState } from '../../react/features/av-moderation/functions';
+import { setAudioOnly } from '../../react/features/base/audio-only/actions';
 import {
     endConference,
     sendTones,
     setAssumedBandwidthBps,
     setFollowMe,
+    setFollowMeRecorder,
     setLocalSubject,
     setPassword,
     setSubject
@@ -31,6 +33,7 @@ import { isSupportedBrowser } from '../../react/features/base/environment/enviro
 import { parseJWTFromURLParams } from '../../react/features/base/jwt/functions';
 import JitsiMeetJS, { JitsiRecordingConstants } from '../../react/features/base/lib-jitsi-meet';
 import { MEDIA_TYPE, VIDEO_TYPE } from '../../react/features/base/media/constants';
+import { isVideoMutedByUser } from '../../react/features/base/media/functions';
 import {
     grantModerator,
     kickParticipant,
@@ -54,6 +57,10 @@ import { getDisplayName } from '../../react/features/base/settings/functions.web
 import { setCameraFacingMode } from '../../react/features/base/tracks/actions.web';
 import { CAMERA_FACING_MODE_MESSAGE } from '../../react/features/base/tracks/constants';
 import {
+    getLocalVideoTrack,
+    isLocalTrackMuted
+} from '../../react/features/base/tracks/functions';
+import {
     autoAssignToBreakoutRooms,
     closeBreakoutRoom,
     createBreakoutRoom,
@@ -68,6 +75,7 @@ import {
     toggleChat
 } from '../../react/features/chat/actions';
 import { openChat } from '../../react/features/chat/actions.web';
+import { showDesktopPicker } from '../../react/features/desktop-picker/actions';
 import {
     processExternalDeviceRequest
 } from '../../react/features/device-selection/functions';
@@ -100,7 +108,7 @@ import {
 } from '../../react/features/participants-pane/actions';
 import { getParticipantsPaneOpen, isForceMuted } from '../../react/features/participants-pane/functions';
 import { startLocalVideoRecording, stopLocalVideoRecording } from '../../react/features/recording/actions.any';
-import { RECORDING_TYPES } from '../../react/features/recording/constants';
+import { RECORDING_METADATA_ID, RECORDING_TYPES } from '../../react/features/recording/constants';
 import { getActiveSession, supportsLocalRecording } from '../../react/features/recording/functions';
 import { startAudioScreenShareFlow, startScreenShareFlow } from '../../react/features/screen-share/actions';
 import { isScreenAudioSupported } from '../../react/features/screen-share/functions';
@@ -108,13 +116,15 @@ import { toggleScreenshotCaptureSummary } from '../../react/features/screenshot-
 import { isScreenshotCaptureEnabled } from '../../react/features/screenshot-capture/functions';
 import SettingsDialog from '../../react/features/settings/components/web/SettingsDialog';
 import { SETTINGS_TABS } from '../../react/features/settings/constants';
-import { playSharedVideo, stopSharedVideo } from '../../react/features/shared-video/actions.any';
+import { playSharedVideo, stopSharedVideo } from '../../react/features/shared-video/actions';
 import { extractYoutubeIdOrURL } from '../../react/features/shared-video/functions';
 import { setRequestingSubtitles, toggleRequestingSubtitles } from '../../react/features/subtitles/actions';
 import { isAudioMuteButtonDisabled } from '../../react/features/toolbox/functions';
 import { setTileView, toggleTileView } from '../../react/features/video-layout/actions.any';
 import { muteAllParticipants } from '../../react/features/video-menu/actions';
 import { setVideoQuality } from '../../react/features/video-quality/actions';
+import { toggleBackgroundEffect, toggleBlurredBackgroundEffect } from '../../react/features/virtual-background/actions';
+import { VIRTUAL_BACKGROUND_TYPE } from '../../react/features/virtual-background/constants';
 import { toggleWhiteboard } from '../../react/features/whiteboard/actions.web';
 import { getJitsiMeetTransport } from '../transport';
 
@@ -322,15 +332,26 @@ function initCommands() {
 
             APP.store.dispatch(setAssumedBandwidthBps(value));
         },
-        'set-follow-me': value => {
+        'set-blurred-background': blurType => {
+            const tracks = APP.store.getState()['features/base/tracks'];
+            const videoTrack = getLocalVideoTrack(tracks)?.jitsiTrack;
+            const muted = tracks ? isLocalTrackMuted(tracks, MEDIA_TYPE.VIDEO) : isVideoMutedByUser(APP.store);
+
+            APP.store.dispatch(toggleBlurredBackgroundEffect(videoTrack, blurType, muted));
+        },
+        'set-follow-me': (value, recorderOnly) => {
 
             if (value) {
-                sendAnalytics(createApiEvent('follow.me.set'));
+                sendAnalytics(createApiEvent('follow.me.set', {
+                    recorderOnly
+                }));
             } else {
-                sendAnalytics(createApiEvent('follow.me.unset'));
+                sendAnalytics(createApiEvent('follow.me.unset', {
+                    recorderOnly
+                }));
             }
 
-            APP.store.dispatch(setFollowMe(value));
+            APP.store.dispatch(recorderOnly ? setFollowMeRecorder(value) : setFollowMe(value));
         },
         'set-large-video-participant': (participantId, videoType) => {
             const { getState, dispatch } = APP.store;
@@ -471,7 +492,8 @@ function initCommands() {
             APP.store.dispatch(toggleRequestingSubtitles());
         },
         'set-subtitles': (enabled, displaySubtitles, language) => {
-            APP.store.dispatch(setRequestingSubtitles(enabled, displaySubtitles, language));
+            APP.store.dispatch(setRequestingSubtitles(
+                enabled, displaySubtitles, language ? `translation-languages:${language}` : null));
         },
         'toggle-tile-view': () => {
             sendAnalytics(createApiEvent('tile-view.toggled'));
@@ -489,7 +511,9 @@ function initCommands() {
             sendAnalytics(createApiEvent('email.changed'));
             APP.conference.changeLocalEmail(email);
         },
-        'avatar-url': avatarUrl => {
+        'avatar-url': avatarUrl => { // @deprecated
+            console.warn('Using command avatarUrl is deprecated. Use context.user.avatar in the jwt.');
+
             sendAnalytics(createApiEvent('avatar.url.changed'));
             APP.conference.changeLocalAvatarUrl(avatarUrl);
         },
@@ -545,6 +569,10 @@ function initCommands() {
             sendAnalytics(createApiEvent('set.video.quality'));
             APP.store.dispatch(setVideoQuality(frameHeight));
         },
+        'set-audio-only': enable => {
+            sendAnalytics(createApiEvent('set.audio.only'));
+            APP.store.dispatch(setAudioOnly(enable));
+        },
         'start-share-video': url => {
             sendAnalytics(createApiEvent('share.video.start'));
             const id = extractYoutubeIdOrURL(url);
@@ -564,13 +592,17 @@ function initCommands() {
          * @param { string } arg.title - Notification title.
          * @param { string } arg.description - Notification description.
          * @param { string } arg.uid - Optional unique identifier for the notification.
-         * @param { string } arg.type - Notification type, either `error`, `info`, `normal`, `success` or `warning`.
+         * @param { string } arg.type - Notification type, either `error`, `normal`, `success` or `warning`.
          * Defaults to "normal" if not provided.
          * @param { string } arg.timeout - Timeout type, either `short`, `medium`, `long` or `sticky`.
          * Defaults to "short" if not provided.
+         * @param { Array<Object> } arg.customActions - An array of custom actions to be displayed in the notification.
+         * Each object should have a `label` and a `uuid` property. It should be used along a listener
+         * for the `customNotificationActionTriggered` event to handle the custom action.
          * @returns {void}
          */
         'show-notification': ({
+            customActions = [],
             title,
             description,
             uid,
@@ -592,7 +624,15 @@ function initCommands() {
                 return;
             }
 
+            const handlers = customActions.map(({ uuid }) => () => {
+                APP.API.notifyCustomNotificationActionTriggered(uuid);
+            });
+
+            const keys = customActions.map(({ label }) => label);
+
             APP.store.dispatch(showNotification({
+                customActionHandler: handlers,
+                customActionNameKey: keys,
                 uid,
                 title,
                 description,
@@ -629,6 +669,7 @@ function initCommands() {
          * @param { string } arg.youtubeStreamKey - The youtube stream key.
          * @param { string } arg.youtubeBroadcastID - The youtube broadcast ID.
          * @param { Object } arg.extraMetadata - Any extra metadata params for file recording.
+         * @param { boolean } arg.transcription - Whether a transcription should be started or not.
          * @returns {void}
          */
         'start-recording': ({
@@ -640,7 +681,8 @@ function initCommands() {
             rtmpBroadcastID,
             youtubeStreamKey,
             youtubeBroadcastID,
-            extraMetadata = {}
+            extraMetadata = {},
+            transcription
         }) => {
             const state = APP.store.getState();
             const conference = getCurrentConference(state);
@@ -715,25 +757,33 @@ function initCommands() {
                     mode: JitsiRecordingConstants.mode.STREAM,
                     streamId: youtubeStreamKey || rtmpStreamKey
                 };
-            } else {
-                logger.error('Invalid recording mode provided');
-
-                return;
             }
 
             if (isScreenshotCaptureEnabled(state, true, false)) {
                 APP.store.dispatch(toggleScreenshotCaptureSummary(true));
             }
-            conference.startRecording(recordingConfig);
+
+            // Start audio / video recording, if requested.
+            if (typeof recordingConfig !== 'undefined') {
+                conference.startRecording(recordingConfig);
+            }
+
+            if (transcription) {
+                APP.store.dispatch(setRequestingSubtitles(true, false, null, true));
+                conference.getMetadataHandler().setMetadata(RECORDING_METADATA_ID, {
+                    isTranscribingEnabled: true
+                });
+            }
         },
 
         /**
          * Stops a recording or streaming in progress.
          *
          * @param {string} mode - `local`, `file` or `stream`.
+         * @param {boolean} transcription - Whether the transcription needs to be stopped.
          * @returns {void}
          */
-        'stop-recording': mode => {
+        'stop-recording': (mode, transcription) => {
             const state = APP.store.getState();
             const conference = getCurrentConference(state);
 
@@ -741,6 +791,13 @@ function initCommands() {
                 logger.error('Conference is not defined');
 
                 return;
+            }
+
+            if (transcription) {
+                APP.store.dispatch(setRequestingSubtitles(false, false, null));
+                conference.getMetadataHandler().setMetadata(RECORDING_METADATA_ID, {
+                    isTranscribingEnabled: false
+                });
             }
 
             if (mode === 'local') {
@@ -808,6 +865,8 @@ function initCommands() {
         'overwrite-config': config => {
             const whitelistedConfig = getWhitelistedJSON('config', config);
 
+            logger.info(`Overwriting config with: ${JSON.stringify(whitelistedConfig)}`);
+
             APP.store.dispatch(overwriteConfig(whitelistedConfig));
         },
         'toggle-virtual-background': () => {
@@ -829,6 +888,16 @@ function initCommands() {
         },
         'toggle-whiteboard': () => {
             APP.store.dispatch(toggleWhiteboard());
+        },
+        'set-virtual-background': (enabled, backgroundImage) => {
+            const tracks = APP.store.getState()['features/base/tracks'];
+            const jitsiTrack = getLocalVideoTrack(tracks)?.jitsiTrack;
+
+            APP.store.dispatch(toggleBackgroundEffect({
+                backgroundEffectEnabled: enabled,
+                backgroundType: VIRTUAL_BACKGROUND_TYPE.IMAGE,
+                virtualSource: backgroundImage
+            }, jitsiTrack));
         }
     };
     transport.on('event', ({ data, name }) => {
@@ -981,6 +1050,12 @@ function initCommands() {
             callback(getRoomsInfo(APP.store.getState()));
             break;
         }
+        case 'get-shared-document-url': {
+            const { etherpad } = APP.store.getState()['features/etherpad'];
+
+            callback(etherpad?.documentUrl || '');
+            break;
+        }
         case 'get-p2p-status': {
             callback(isP2pActive(APP.store.getState()));
             break;
@@ -993,6 +1068,23 @@ function initCommands() {
         }
         case '_new_electron_screensharing_supported': {
             callback(true);
+
+            break;
+        }
+        case 'open-desktop-picker': {
+            const { desktopSharingSources } = APP.store.getState()['features/base/config'];
+            const options = {
+                desktopSharingSources: desktopSharingSources ?? [ 'screen', 'window' ]
+            };
+            const onSourceChoose = (_streamId, _type, screenShareAudio, source) => {
+                callback({
+                    screenShareAudio,
+                    source
+                });
+            };
+
+            dispatch(showDesktopPicker(options, onSourceChoose));
+
             break;
         }
         default:
@@ -1321,14 +1413,14 @@ class API {
      * @returns {void}
      */
     notifyReceivedChatMessage(
-            { body, id, nick, privateMessage, ts } = {}) {
-        if (APP.conference.isLocalId(id)) {
+            { body, from, nick, privateMessage, ts } = {}) {
+        if (APP.conference.isLocalId(from)) {
             return;
         }
 
         this._sendEvent({
             name: 'incoming-message',
-            from: id,
+            from,
             message: body,
             nick,
             privateMessage,
@@ -1428,6 +1520,21 @@ class API {
     }
 
     /**
+     * Notify external application (if API is enabled) that a custom notification action has been triggered.
+     *
+     * @param {string} actionUuid - The UUID of the action that has been triggered.
+     * @returns {void}
+    */
+    notifyCustomNotificationActionTriggered(actionUuid) {
+        this._sendEvent({
+            name: 'custom-notification-action-triggered',
+            data: {
+                id: actionUuid
+            }
+        });
+    }
+
+    /**
      * Notify external application (if API is enabled) that the list of sharing participants changed.
      *
      * @param {Object} data - The event data.
@@ -1518,8 +1625,8 @@ class API {
                 formattedArgument += `${arg.toString()}: ${arg.stack}`;
             } else if (typeof arg === 'object') {
                 // NOTE: The non-enumerable properties of the objects wouldn't be included in the string after
-                // JSON.strigify. For example Map instance will be translated to '{}'. So I think we have to eventually
-                // do something better for parsing the arguments. But since this option for strigify is part of the
+                // JSON.stringify. For example Map instance will be translated to '{}'. So I think we have to eventually
+                // do something better for parsing the arguments. But since this option for stringify is part of the
                 // public interface and I think it could be useful in some cases I will it for now.
                 try {
                     formattedArgument += JSON.stringify(arg);
@@ -1797,9 +1904,9 @@ class API {
      * Notify external application of a participant, remote or local, being
      * removed from the conference by another participant.
      *
-     * @param {string} kicked - The ID of the participant removed from the
+     * @param {Object} kicked - The participant removed from the
      * conference.
-     * @param {string} kicker - The ID of the participant that removed the
+     * @param {Object} kicker - The participant that removed the
      * other participant.
      * @returns {void}
      */
@@ -1917,14 +2024,16 @@ class API {
      * @param {boolean} on - True if recording is on, false otherwise.
      * @param {string} mode - Stream or file or local.
      * @param {string} error - Error type or null if success.
+     * @param {boolean} transcription - True if a transcription is being recorded, false otherwise.
      * @returns {void}
      */
-    notifyRecordingStatusChanged(on, mode, error) {
+    notifyRecordingStatusChanged(on, mode, error, transcription) {
         this._sendEvent({
             name: 'recording-status-changed',
             on,
             mode,
-            error
+            error,
+            transcription
         });
     }
 
@@ -2139,6 +2248,21 @@ class API {
 
 
     /**
+     * Notify external application (if API is enabled) the conference
+     * start time.
+     *
+     * @param {number} timestamp - Timestamp conference was created.
+     * @returns {void}
+     */
+    notifyConferenceCreatedTimestamp(timestamp) {
+        this._sendEvent({
+            name: 'conference-created-timestamp',
+            timestamp
+        });
+    }
+
+
+    /**
      * Notify the external application (if API is enabled) if the connection type changed.
      *
      * @param {boolean} isP2p - Whether the new connection is P2P.
@@ -2161,6 +2285,19 @@ class API {
         this._sendEvent({
             name: 'compute-pressure-changed',
             records
+        });
+    }
+
+    /**
+     * Notify the external application (if API is enabled) when the audio only enabled status changed.
+     *
+     * @param {boolean} enabled - Whether the audio only is enabled or not.
+     * @returns {void}
+     */
+    notifyAudioOnlyChanged(enabled) {
+        this._sendEvent({
+            name: 'audio-only-changed',
+            enabled
         });
     }
 

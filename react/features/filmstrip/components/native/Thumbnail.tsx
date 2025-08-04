@@ -288,7 +288,7 @@ class Thumbnail extends PureComponent<IProps> {
      * @inheritdoc
      * @returns {void}
      */
-    componentDidMount() {
+    override componentDidMount() {
         // Listen to track streaming status changed event to keep it updated.
         // TODO: after converting this component to a react function component,
         // use a custom hook to update local track streaming status.
@@ -309,7 +309,7 @@ class Thumbnail extends PureComponent<IProps> {
      * @inheritdoc
      * @returns {void}
      */
-    componentDidUpdate(prevProps: IProps) {
+    override componentDidUpdate(prevProps: IProps) {
         // TODO: after converting this component to a react function component,
         // use a custom hook to update local track streaming status.
         const { _videoTrack, dispatch } = this.props;
@@ -336,7 +336,7 @@ class Thumbnail extends PureComponent<IProps> {
      * @inheritdoc
      * @returns {void}
      */
-    componentWillUnmount() {
+    override componentWillUnmount() {
         // TODO: after converting this component to a react function component,
         // use a custom hook to update local track streaming status.
         const { _videoTrack, dispatch } = this.props;
@@ -367,7 +367,7 @@ class Thumbnail extends PureComponent<IProps> {
      * @inheritdoc
      * @returns {ReactElement}
      */
-    render() {
+    override render() {
         const {
             _fakeParticipant,
             _gifSrc,

@@ -174,8 +174,8 @@ public class MainActivity extends JitsiMeetActivity {
             .setFeatureFlag("call-integration.enabled", false)
             .setIncomingCallInfo(new IncomingCallInfo("Shadab","", "title",false))
             .setGroupCall(false)
-            .setPrivateRoom(false)
-            .setAudioOnly(true)
+            .setPrivateRoom(true)
+            .setAudioOnly(false)
             .build();
         JitsiMeet.setDefaultConferenceOptions(defaultOptions);
         new Handler().postDelayed(new Runnable() {

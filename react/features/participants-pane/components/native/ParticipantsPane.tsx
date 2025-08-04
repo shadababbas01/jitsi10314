@@ -25,6 +25,13 @@ const ParticipantsPane = () => {
     const isLocalModerator = useSelector(isLocalParticipantModerator);
     const keyExtractor
         = useCallback((e: undefined, i: number) => i.toString(), []);
+    const renderListHeaderComponent = () => (
+        <>
+            <VisitorsList />
+            <LobbyParticipantList />
+            <MeetingParticipantList />
+        </>
+    );
 
     return (
         <JitsiScreen
@@ -35,6 +42,7 @@ const ParticipantsPane = () => {
             <FlatList
 
                 // eslint-disable-next-line react/jsx-no-bind
+// <<<<<<< HEAD
                 ListHeaderComponent = { () => (
                     <>
                         <VisitorsList />
@@ -47,6 +55,9 @@ const ParticipantsPane = () => {
     const showAddBreakoutRoom = useSelector(isAddBreakoutRoomButtonVisible) && remoteUsers > 2; */}
                     </>
                 ) }
+// =======
+//                 ListHeaderComponent = { renderListHeaderComponent }
+// >>>>>>> stable/jitsi-meet_10314
                 data = { [] as ReadonlyArray<undefined> }
                 keyExtractor = { keyExtractor }
                 renderItem = { null }

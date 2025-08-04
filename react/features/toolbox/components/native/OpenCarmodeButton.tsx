@@ -14,9 +14,15 @@ import { screen } from '../../../mobile/navigation/routes';
  * Implements an {@link AbstractButton} to open the carmode.
  */
 class OpenCarmodeButton extends AbstractButton<AbstractButtonProps> {
+// <<<<<<< HEAD
     accessibilityLabel = 'toolbar.accessibilityLabel.carmode';
     icon = IconCar;
     label = 'toolbar.accessibilityLabel.carmode';
+// =======
+//     override accessibilityLabel = 'toolbar.accessibilityLabel.carmode';
+//     override icon = IconCar;
+//     override label = 'carmode.labels.buttonLabel';
+// >>>>>>> stable/jitsi-meet_10314
 
     /**
      * Handles clicking / pressing the button, and opens the carmode mode.
@@ -24,7 +30,7 @@ class OpenCarmodeButton extends AbstractButton<AbstractButtonProps> {
      * @private
      * @returns {void}
      */
-    _handleClick() {
+    override _handleClick() {
         return navigate(screen.conference.carmode);
     }
 }

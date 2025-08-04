@@ -77,6 +77,7 @@ class Whiteboard extends PureComponent<IProps> {
     }
 
     /**
+// <<<<<<< HEAD
     * Implements React's {@link Component#componentDidMount()}. Invoked
     * immediately after mounting occurs.
     *
@@ -84,6 +85,15 @@ class Whiteboard extends PureComponent<IProps> {
     * @returns {void}
     */
     componentDidMount() {
+// =======
+//      * Implements React's {@link Component#componentDidMount()}. Invoked
+//      * immediately after mounting occurs.
+//      *
+//      * @inheritdoc
+//      * @returns {void}
+//      */
+//     override componentDidMount() {
+// >>>>>>> stable/jitsi-meet_10314
         const { navigation, t } = this.props;
 
         navigation.setOptions({
@@ -92,11 +102,19 @@ class Whiteboard extends PureComponent<IProps> {
     }
 
     /**
+<<<<<<< HEAD
     * Implements React's {@link Component#render()}.
     *
     * @inheritdoc
     */
     render() {
+// =======
+//      * Implements React's {@link Component#render()}.
+//      *
+//      * @inheritdoc
+//      */
+//     override render() {
+// >>>>>>> stable/jitsi-meet_10314
         const { locationHref, route } = this.props;
         const collabServerUrl = safeDecodeURIComponent(route.params?.collabServerUrl);
         const localParticipantName = safeDecodeURIComponent(route.params?.localParticipantName);

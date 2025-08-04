@@ -19,7 +19,8 @@ import {
 import { appNavigate } from '../../../app/actions.native';
 import { IReduxState, IStore } from '../../../app/types';
 import { CONFERENCE_BLURRED, CONFERENCE_FOCUSED } from '../../../base/conference/actionTypes';
-import { FULLSCREEN_ENABLED, PIP_ENABLED } from '../../../base/flags/constants';
+import { isDisplayNameVisible } from '../../../base/config/functions.native';
+import { FULLSCREEN_ENABLED } from '../../../base/flags/constants';
 import { getFeatureFlag } from '../../../base/flags/functions';
 import Container from '../../../base/react/components/native/Container';
 import LoadingIndicator from '../../../base/react/components/native/LoadingIndicator';
@@ -42,7 +43,7 @@ import LargeVideo from '../../../large-video/components/LargeVideo.native';
 import { getIsLobbyVisible } from '../../../lobby/functions';
 import { navigate } from '../../../mobile/navigation/components/conference/ConferenceNavigationContainerRef';
 import { screen } from '../../../mobile/navigation/routes';
-import { setPictureInPictureEnabled } from '../../../mobile/picture-in-picture/functions';
+import { isPipEnabled, setPictureInPictureEnabled } from '../../../mobile/picture-in-picture/functions';
 import Captions from '../../../subtitles/components/native/Captions';
 import { setToolboxVisible } from '../../../toolbox/actions.native';
 import Toolbox from '../../../toolbox/components/native/Toolbox';
@@ -106,6 +107,11 @@ interface IProps extends AbstractProps {
      * The indicator which determines whether fullscreen (immersive) mode is enabled.
      */
     _fullscreenEnabled: boolean;
+
+    /**
+     * The indicator which determines if the display name is visible.
+     */
+    _isDisplayNameVisible: boolean;
 
     /**
      * The indicator which determines if the participants pane is open.
@@ -188,6 +194,11 @@ class Conference extends AbstractConference<IProps, State> {
     subscriptionviewcalldata;
 
     /**
+     * Initializes hardwareBackPress subscription.
+     */
+    _hardwareBackPressSubscription: any;
+
+    /**
      * Initializes a new Conference instance.
      *
      * @param {Object} props - The read-only properties with which the new
@@ -236,6 +247,7 @@ class Conference extends AbstractConference<IProps, State> {
      * @inheritdoc
      * @returns {void}
      */
+// <<<<<<< HEAD
     componentDidMount() {
             let eventEmitter;
         if (isPlatformiOS() && this.nativeEventEmitter) {
@@ -268,6 +280,20 @@ class Conference extends AbstractConference<IProps, State> {
                 // }else{
         //     AudioMode.setAudioDevice("SPEAKER");
         // } added by jaswant
+// =======
+//     override componentDidMount() {
+//         const {
+//             _audioOnlyEnabled,
+//             _startCarMode,
+//             navigation
+//         } = this.props;
+
+//         this._hardwareBackPressSubscription = BackHandler.addEventListener('hardwareBackPress', this._onHardwareBackPress);
+
+//         if (_audioOnlyEnabled && _startCarMode) {
+//             navigation.navigate(screen.conference.carmode);
+//         }
+// >>>>>>> stable/jitsi-meet_10314
     }
 
     /**
@@ -275,7 +301,7 @@ class Conference extends AbstractConference<IProps, State> {
      *
      * @inheritdoc
      */
-    componentDidUpdate(prevProps: IProps) {
+    override componentDidUpdate(prevProps: IProps) {
         const {
             _showLobby
         } = this.props;
@@ -301,9 +327,9 @@ class Conference extends AbstractConference<IProps, State> {
      * @inheritdoc
      * @returns {void}
      */
-    componentWillUnmount() {
+    override componentWillUnmount() {
         // Tear handling any hardware button presses for back navigation down.
-        BackHandler.removeEventListener('hardwareBackPress', this._onHardwareBackPress);
+        this._hardwareBackPressSubscription?.remove();
 
         clearTimeout(this._expandedLabelTimeout.current ?? 0);
         this._stopTimer();
@@ -324,8 +350,16 @@ class Conference extends AbstractConference<IProps, State> {
      * @inheritdoc
      * @returns {ReactElement}
      */
+// <<<<<<< HEAD
     render() {
         const { _fullscreenEnabled } = this.props;
+// =======
+//     override render() {
+//         const {
+//             _brandingStyles,
+//             _fullscreenEnabled
+//         } = this.props;
+// >>>>>>> stable/jitsi-meet_10314
 
         return (
             <Container style = { styles.conference }>
@@ -520,6 +554,8 @@ _connectionStatus(event) {
      _renderContent() {
         const {
             _connecting,
+            _filmstripVisible,
+            _isDisplayNameVisible,
             _largeVideoParticipantId,
             _reducedUI,
             _shouldDisplayTileView,
@@ -552,6 +588,7 @@ _connectionStatus(event) {
         }
     
         return (
+// <<<<<<< HEAD
             !audioOnly ? (
                 <ConferenceOld 
                     setMessagestate={this._setMessagestate}
@@ -601,6 +638,99 @@ _connectionStatus(event) {
                     </SafeAreaView>
                 </AudioScreen>
             )
+// =======
+//             <>
+//                 {/*
+//                   * The LargeVideo is the lowermost stacking layer.
+//                   */
+//                     _shouldDisplayTileView
+//                         ? <TileView onClick = { this._onClick } />
+//                         : <LargeVideo onClick = { this._onClick } />
+//                 }
+
+//                 {/*
+//                   * If there is a ringing call, show the callee's info.
+//                   */
+//                     <CalleeInfoContainer />
+//                 }
+
+//                 {/*
+//                   * The activity/loading indicator goes above everything, except
+//                   * the toolbox/toolbars and the dialogs.
+//                   */
+//                     _connecting
+//                         && <TintedView>
+//                             <LoadingIndicator />
+//                         </TintedView>
+//                 }
+
+//                 <View
+//                     pointerEvents = 'box-none'
+//                     style = { styles.toolboxAndFilmstripContainer as ViewStyle }>
+
+//                     <Captions onPress = { this._onClick } />
+
+//                     {
+//                         _shouldDisplayTileView
+//                         || (_isDisplayNameVisible && (
+//                             <Container style = { styles.displayNameContainer }>
+//                                 <DisplayNameLabel
+//                                     participantId = { _largeVideoParticipantId } />
+//                             </Container>
+//                         ))
+//                     }
+
+//                     { !_shouldDisplayTileView && <LonelyMeetingExperience /> }
+
+//                     {
+//                         _shouldDisplayTileView
+//                         || <>
+//                             <Filmstrip />
+//                             { this._renderNotificationsContainer() }
+//                             <Toolbox />
+//                         </>
+//                     }
+//                 </View>
+
+//                 <SafeAreaView
+//                     pointerEvents = 'box-none'
+//                     style = {
+//                         (_toolboxVisible
+//                             ? styles.titleBarSafeViewColor
+//                             : styles.titleBarSafeViewTransparent) as ViewStyle }>
+//                     <TitleBar _createOnPress = { this._createOnPress } />
+//                 </SafeAreaView>
+//                 <SafeAreaView
+//                     pointerEvents = 'box-none'
+//                     style = {
+//                         (_toolboxVisible
+//                             ? [ styles.titleBarSafeViewTransparent, { top: this.props.insets.top + 50 } ]
+//                             : styles.titleBarSafeViewTransparent) as ViewStyle
+//                     }>
+//                     <View
+//                         pointerEvents = 'box-none'
+//                         style = { styles.expandedLabelWrapper }>
+//                         <ExpandedLabelPopup visibleExpandedLabel = { this.state.visibleExpandedLabel } />
+//                     </View>
+//                     <View
+//                         pointerEvents = 'box-none'
+//                         style = { alwaysOnTitleBarStyles as ViewStyle }>
+//                         {/* eslint-disable-next-line react/jsx-no-bind */}
+//                         <AlwaysOnLabels createOnPress = { this._createOnPress } />
+//                     </View>
+//                 </SafeAreaView>
+
+//                 <TestConnectionInfo />
+
+//                 {
+//                     _shouldDisplayTileView
+//                     && <>
+//                         { this._renderNotificationsContainer() }
+//                         <Toolbox />
+//                     </>
+//                 }
+//             </>
+// >>>>>>> stable/jitsi-meet_10314
         );
     }
 
@@ -718,10 +848,14 @@ function _mapStateToProps(state, ownProps) {
         _connecting: isConnecting(state),
         _filmstripVisible: isFilmstripVisible(state),
         _fullscreenEnabled: getFeatureFlag(state, FULLSCREEN_ENABLED, true),
+// <<<<<<< HEAD
         _isOneToOneConference: false,
+// =======
+        _isDisplayNameVisible: isDisplayNameVisible(state),
+// >>>>>>> stable/jitsi-meet_10314
         _isParticipantsPaneOpen: isOpen,
         _largeVideoParticipantId: state['features/large-video'].participantId,
-        _pictureInPictureEnabled: getFeatureFlag(state, PIP_ENABLED),
+        _pictureInPictureEnabled: isPipEnabled(state),
         _reducedUI: reducedUI,
         _showLobby: getIsLobbyVisible(state),
         _toolboxVisible: isToolboxVisible(state),

@@ -4,13 +4,17 @@ import { connect } from 'react-redux';
 
 import { IReduxState } from '../../../app/types';
 import { getConferenceName, getConferenceTimestamp } from '../../../base/conference/functions';
-import { CONFERENCE_TIMER_ENABLED } from '../../../base/flags/constants';
+import {
+    AUDIO_DEVICE_BUTTON_ENABLED,
+    CONFERENCE_TIMER_ENABLED,
+    TOGGLE_CAMERA_BUTTON_ENABLED
+} from '../../../base/flags/constants';
 import { getFeatureFlag } from '../../../base/flags/functions';
 import AudioDeviceToggleButton from '../../../mobile/audio-mode/components/AudioDeviceToggleButton';
 import PictureInPictureButton from '../../../mobile/picture-in-picture/components/PictureInPictureButton';
 import ParticipantsPaneButton from '../../../participants-pane/components/native/ParticipantsPaneButton';
 import { isParticipantsPaneEnabled } from '../../../participants-pane/functions';
-import { isRoomNameEnabled } from '../../../prejoin/functions';
+import { isRoomNameEnabled } from '../../../prejoin/functions.native';
 import ToggleCameraButton from '../../../toolbox/components/native/ToggleCameraButton';
 import { isToolboxVisible } from '../../../toolbox/functions.native';
 import ZoomButton from '../../../toolbox/components/native/ZoomButton';
@@ -26,6 +30,11 @@ import styles from './styles';
 
 
 interface IProps {
+
+    /**
+     * Whether the audio device button should be displayed.
+     */
+    _audioDeviceButtonEnabled: boolean;
 
     /**
      * Whether displaying the current conference timer is enabled or not.
@@ -52,6 +61,11 @@ interface IProps {
      * Whether displaying the current room name is enabled or not.
      */
     _roomNameEnabled: boolean;
+
+    /**
+     * Whether the toggle camera button should be displayed.
+     */
+    _toggleCameraButtonEnabled: boolean;
 
     /**
      * True if the navigation bar should be visible.
@@ -102,6 +116,7 @@ const TitleBar = (props: IProps) => {
                 {/* eslint-disable-next-line react/jsx-no-bind */}
                 {/* <Labels createOnPress = { props._createOnPress } /> */}
             </View>
+{/* <<<<<<< HEAD */}
             <View style = { styles.titleBarButtonContainer }>
                 <ToggleCameraButton styles = { styles.titleBarButton } />
             </View>
@@ -111,6 +126,20 @@ const TitleBar = (props: IProps) => {
             <View style = { styles.titleBarButtonContainer }>
                 <AudioDeviceToggleButton styles = { styles.titleBarButton } />
             </View>
+{/* =======
+            {
+                props._toggleCameraButtonEnabled
+                && <View style = { styles.titleBarButtonContainer }>
+                    <ToggleCameraButton styles = { styles.titleBarButton } />
+                </View>
+            }
+            {
+                props._audioDeviceButtonEnabled
+                && <View style = { styles.titleBarButtonContainer }>
+                    <AudioDeviceToggleButton styles = { styles.titleBarButton } />
+                </View>
+            }
+>>>>>>> stable/jitsi-meet_10314 */}
             {
                 _isParticipantsPaneEnabled
                 && <View style = { styles.titleBarButtonContainer }>
@@ -134,14 +163,20 @@ function _mapStateToProps(state: IReduxState) {
     const zoomtype = state['features/base/settings'].zoomtype;
     const people = getParticipantCountRemoteOnly(state);
     return {
+        _audioDeviceButtonEnabled: getFeatureFlag(state, AUDIO_DEVICE_BUTTON_ENABLED, true),
         _conferenceTimerEnabled:
         Boolean(getParticipantCountRemoteOnly(state) >= 1),
         _isParticipantsPaneEnabled: isParticipantsPaneEnabled(state),
         _meetingName: getConferenceName(state),
         _roomNameEnabled: isRoomNameEnabled(state),
+// <<<<<<< HEAD
         _zoomtype: zoomtype,
         _visible: isToolboxVisible(state),
         _people: getParticipantCountRemoteOnly(state)
+// =======
+        // _toggleCameraButtonEnabled: getFeatureFlag(state, TOGGLE_CAMERA_BUTTON_ENABLED, true),
+//         _visible: isToolboxVisible(state)
+// >>>>>>> stable/jitsi-meet_10314
     };
 }
 

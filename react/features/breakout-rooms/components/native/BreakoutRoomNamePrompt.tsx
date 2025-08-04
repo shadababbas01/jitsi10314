@@ -18,10 +18,19 @@ export default function BreakoutRoomNamePrompt({ breakoutRoomJid, initialRoomNam
     const dispatch = useDispatch();
 
     const onSubmit = useCallback((roomName: string) => {
+// <<<<<<< HEAD
         // Prevent empty or unchanged names
         const trimmedName = roomName.trim();
         if (!trimmedName || trimmedName === initialRoomName?.trim()) {
             return false;
+// =======
+//         const formattedRoomName = roomName?.trim();
+
+//         if (formattedRoomName) {
+//             dispatch(renameBreakoutRoom(breakoutRoomJid, formattedRoomName));
+
+//             return true;
+// >>>>>>> stable/jitsi-meet_10314
         }
 
         // Dispatch rename action with comprehensive error handling

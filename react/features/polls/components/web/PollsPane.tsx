@@ -28,18 +28,19 @@ const useStyles = makeStyles()(() => {
     };
 });
 
-const PollsPane = ({ createMode, onCreate, setCreateMode, t }: AbstractProps) => {
+const PollsPane = ({ createMode, isCreatePollsDisabled, onCreate, setCreateMode, t }: AbstractProps) => {
     const { classes } = useStyles();
 
     return createMode
         ? <PollCreate setCreateMode = { setCreateMode } />
         : <div className = { classes.container }>
             <div className = { classes.listContainer } >
-                <PollsList />
+                <PollsList setCreateMode = { setCreateMode } />
             </div>
             <div className = { classes.footer }>
                 <Button
                     accessibilityLabel = { t('polls.create.create') }
+                    disabled = { isCreatePollsDisabled }
                     fullWidth = { true }
                     labelKey = { 'polls.create.create' }
                     onClick = { onCreate } />

@@ -22,9 +22,19 @@ MiddlewareRegistry.register(store => next => action => {
             backgroundColor,
             backgroundImageUrl,
             brandedIcons,
+            customParticipantMenuButtons,
+            customToolbarButtons,
             didPageUrl,
+            downloadAppsUrl,
+            etherpadBase,
             inviteDomain,
-            labels
+            labels,
+            liveStreamingDialogUrls,
+            peopleSearchUrl,
+            salesforceUrl,
+            sharedVideoAllowedURLDomains,
+            supportUrl,
+            userDocumentationUrl,
         } = action.value;
 
         action.value = {
@@ -32,9 +42,19 @@ MiddlewareRegistry.register(store => next => action => {
             backgroundColor,
             backgroundImageUrl,
             brandedIcons,
+            customParticipantMenuButtons,
+            customToolbarButtons,
             didPageUrl,
+            downloadAppsUrl,
+            etherpadBase,
             inviteDomain,
-            labels
+            labels,
+            liveStreamingDialogUrls,
+            peopleSearchUrl,
+            salesforceUrl,
+            sharedVideoAllowedURLDomains,
+            supportUrl,
+            userDocumentationUrl
         };
 
         // The backend may send an empty string, make sure we skip that.

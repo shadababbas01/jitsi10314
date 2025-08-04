@@ -311,7 +311,7 @@ export function createInviteDialogEvent(
  * @returns {Object}
  */
 export function createNetworkInfoEvent({ isOnline, networkType, details }:
-    { details?: Object; isOnline: boolean; networkType?: string; }) {
+{ details?: Object; isOnline: boolean; networkType?: string; }) {
     const attributes: {
         details?: Object;
         isOnline: boolean;
@@ -331,15 +331,17 @@ export function createNetworkInfoEvent({ isOnline, networkType, details }:
 /**
  * Creates a "not allowed error" event.
  *
+ * @param {string} type - The type of the error.
  * @param {string} reason - The reason for the error.
  * @returns {Object} The event in a format suitable for sending via
  * sendAnalytics.
  */
-export function createNotAllowedErrorEvent(reason: string) {
+export function createNotAllowedErrorEvent(type: string, reason: string) {
     return {
         action: 'not.allowed.error',
         attributes: {
-            reason
+            reason,
+            type
         }
     };
 }

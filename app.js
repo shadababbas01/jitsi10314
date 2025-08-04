@@ -1,44 +1,88 @@
-/* application specific logic */
-
-// Re-export jQuery
-// FIXME: Remove this requirement from torture tests.
+/* Jitsi Meet – Web app entry‑point (modernised) */
+// If torture‑tests still need jQuery, leave this block; otherwise remove it.
 import $ from 'jquery';
-
 window.$ = window.jQuery = $;
 
-import '@matrix-org/olm';
+/* Polyfills and early initialisers
+   ─────────────────────────────── */
 
-import 'focus-visible';
+import '@matrix-org/olm';   // E2EE library – must load before React tree
+import 'focus-visible';     // :focus-visible polyfill
+import './react/features/base/jitsi-local-storage/setup'; // local‑storage bridge
 
-// We need to setup the jitsi-local-storage as early as possible so that we can start using it.
-// NOTE: If jitsi-local-storage is used before the initial setup is performed this will break the use case when we use
-// the  local storage from the parent page when the localStorage is disabled. Also the setup is relying that
-// window.location is not changed and still has all URL parameters.
-import './react/features/base/jitsi-local-storage/setup';
-import conference from './conference';
-import API from './modules/API';
-import UI from './modules/UI/UI';
-import translation from './modules/translation/translation';
+/* Safari < 14 createImageBitmap polyfill (Canvas only) */
+if (!('createImageBitmap' in window)) {
+    window.createImageBitmap = canvas =>
+        new Promise((resolve, reject) => {
+            if (!(canvas instanceof HTMLCanvasElement)) {
+                return reject(
+                    new Error('createImageBitmap polyfill only handles HTMLCanvasElement')
+                );
+            }
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.src = canvas.toDataURL();
+        });
+}
 
-// Initialize Olm as early as possible.
+/* Initialise Olm as early as possible. If it fails, remove it so code
+ * that checks `window.Olm` disables E2EE gracefully. */
 if (window.Olm) {
-    window.Olm.init().catch(e => {
-        console.error('Failed to initialize Olm, E2EE will be disabled', e);
+    window.Olm.init().catch(err => {
+        console.error('Failed to initialise Olm, E2EE disabled:', err);
         delete window.Olm;
     });
 }
 
-window.APP = {
-    API,
-    conference,
-    translation,
-    UI
-};
+/* Expose legacy globals for external APIs */
+import conference from './conference';
+import API        from './modules/API';
+import UI         from './modules/UI/UI';
+import translation from './modules/translation/translation';
 
-// TODO The execution of the mobile app starts from react/index.native.js.
-// Similarly, the execution of the Web app should start from react/index.web.js
-// for the sake of consistency and ease of understanding. Temporarily though
-// because we are at the beginning of introducing React into the Web app, allow
-// the execution of the Web app to start from app.js in order to reduce the
-// complexity of the beginning step.
-import './react';
+window.APP = { API, conference, translation, UI };
+
+/* ────────────────────────────────────────────────────────── */
+/*  React entry – we now start from react/index.web.js       */
+/* ────────────────────────────────────────────────────────── */
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import Root from './react/index.web';            // ← new canonical web entry
+
+/* Minimal Error Boundary so uncaught JS errors show a friendly UI instead
+ * of crashing the whole bundle (and silencing Metro with “no stack”). */
+class ErrorBoundary extends React.Component {
+    state = { hasError: false };
+
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+    componentDidCatch(error, info) {
+        console.error('Uncaught error in React tree', error, info);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{
+                    display: 'flex',
+                    height: '100vh',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 18
+                }}>
+                    Something went wrong. Please reload the page.
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+ReactDOM.render(
+    <ErrorBoundary>
+        <Root />
+    </ErrorBoundary>,
+    document.getElementById('react‑root') || document.body.appendChild(document.createElement('div'))
+);

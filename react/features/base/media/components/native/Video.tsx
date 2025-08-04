@@ -155,8 +155,20 @@ interface IProps {
     objectFit: 'cover' | 'contain'; // Updated prop name
 }
 
-class Video extends Component<IProps> {
-    componentDidMount() {
+/**
+ * The React Native {@link Component} which is similar to Web's
+ * {@code HTMLVideoElement} and wraps around react-native-webrtc's
+ * {@link RTCView}.
+ */
+export default class Video extends Component<IProps> {
+    /**
+     * React Component method that executes once component is mounted.
+     *
+     * @inheritdoc
+     */
+    override componentDidMount() {
+        // RTCView currently does not support media events, so just fire
+        // onPlaying callback when <RTCView> is rendered.
         const { onPlaying } = this.props;
         onPlaying?.();
     }

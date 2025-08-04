@@ -956,17 +956,17 @@
     },
     "presenceStatus": {
         "busy": "Ocupado",
-        "calling": "Chamando...",
+        "calling": "Chamando…",
         "connected": "Conectado",
-        "connecting": "Conectando...",
-        "connecting2": "Conectando*...",
+        "connecting": "Conectando…",
+        "connecting2": "Conectando*…",
         "disconnected": "Desconectado",
         "expired": "Expirado",
         "ignored": "Ignorado",
-        "initializingCall": "Iniciando Chamada...",
+        "initializingCall": "Iniciando Chamada…",
         "invited": "Convidar",
         "rejected": "Rejeitado",
-        "ringing": "Tocando..."
+        "ringing": "Tocando…"
     },
     "profile": {
         "avatar": "avatar",
@@ -1031,6 +1031,7 @@
         "recordAudioAndVideo": "Gravar áudio e vídeo",
         "recordTranscription": "Gravar transcrições",
         "saveLocalRecording": "Guardar ficheiro de gravação localmente (Beta)",
+        "rec": "REC",
         "serviceDescription": "Sua gravação será salva pelo serviço de gravação",
         "serviceDescriptionCloud": "Gravação na nuvem",
         "serviceDescriptionCloudInfo": "As reuniões gravadas são automaticamente apagadas 24h após a hora de gravação.",
@@ -1372,6 +1373,8 @@
         "labelToolTip": "A reunião esta sendo transcrita",
         "sourceLanguageDesc": "Atualmente a língua da reunião está definida para <b>{{sourceLanguage}}</b>. <br/> Pode alterá-la a partir ",
         "sourceLanguageHere": "daqui",
+        "off": "Transcrição parada",
+        "pending": "Preparando a transcrição da reunião…",
         "start": "Exibir legendas",
         "stop": "Não exibir legendas",
         "subtitles": "Legendas",
@@ -1389,7 +1392,8 @@
         "nwjsGrantPermissions": "Dê as permissões para usar a sua câmara e microfone",
         "operaGrantPermissions": "Selecione <b><i>Permitir</i></b> quando o seu navegador perguntar pelas permissões.",
         "react-nativeGrantPermissions": "Selecione <b><i>Permitir</i></b> quando o seu navegador perguntar pelas permissões.",
-        "safariGrantPermissions": "Selecione <b><i>OK</i></b> quando o seu navegador perguntar pelas permissões."
+        "safariGrantPermissions": "Selecione <b><i>OK</i></b> quando o seu navegador perguntar pelas permissões.",
+        "grantPermissions": "Dê as permissões para usar sua câmera e microfone."
     },
     "videoSIPGW": {
         "busy": "Estamos a trabalhar para liberar recursos. Por favor, tente novamente em alguns minutos.",

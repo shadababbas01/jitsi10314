@@ -1,4 +1,8 @@
 import { IReduxState } from '../app/types';
+import { MEET_FEATURES } from '../base/jwt/constants';
+import { isJwtFeatureEnabled } from '../base/jwt/functions';
+
+import { IAnswerData } from './types';
 
 /**
  * Selector creator for determining if poll results should be displayed or not.
@@ -49,14 +53,30 @@ export function isSubmitAnswerDisabled(checkBoxStates: Array<boolean>) {
 /**
  * Check if the input array has identical answers.
  *
- * @param {Array<string>} currentAnswers - The array of current answers to compare.
+ * @param {Array<IAnswerData>} currentAnswers - The array of current answers to compare.
  * @returns {boolean} - Returns true if the answers are identical.
  */
-export function hasIdenticalAnswers(currentAnswers: Array<string>): boolean {
+export function hasIdenticalAnswers(currentAnswers: Array<IAnswerData>): boolean {
 
-    const nonEmptyCurrentAnswers = currentAnswers.filter((answer: string): boolean => answer !== '');
+    const nonEmptyCurrentAnswers = currentAnswers.filter((answer): boolean => answer.name !== '');
 
-    const currentAnswersSet = new Set(nonEmptyCurrentAnswers);
+    const currentAnswersSet = new Set(nonEmptyCurrentAnswers.map(answer => answer.name));
 
     return currentAnswersSet.size !== nonEmptyCurrentAnswers.length;
+}
+
+/**
+ * Check if participant is not allowed to create polls.
+ *
+ * @param {IReduxState} state - The redux state.
+ * @returns {boolean} - Returns true if the participant is not allowed to create polls.
+ */
+export function isCreatePollDisabled(state: IReduxState) {
+    const { pollCreationRequiresPermission } = state['features/dynamic-branding'];
+
+    if (!pollCreationRequiresPermission) {
+        return false;
+    }
+
+    return !isJwtFeatureEnabled(state, MEET_FEATURES.CREATE_POLLS, false);
 }

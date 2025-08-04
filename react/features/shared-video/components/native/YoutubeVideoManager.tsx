@@ -130,7 +130,7 @@ class YoutubeVideoManager extends AbstractVideoManager<IState> {
             });
         }
 
-        if (event === 'playing') {
+        if (event === PLAYBACK_STATUSES.PLAYING) {
             this.setState({
                 paused: false
             }, () => {
@@ -191,9 +191,13 @@ class YoutubeVideoManager extends AbstractVideoManager<IState> {
      *
      * @inheritdoc
      */
+// <<<<<<< HEAD
     render() {
 
         console.log("Videoview--->",this.playerRef);
+// =======
+//     override render() {
+// >>>>>>> stable/jitsi-meet_10314
         return (
             <Video
                 ref = { this.playerRef }

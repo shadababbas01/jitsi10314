@@ -31,8 +31,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.text.HtmlCompat;
 
-import android.os.Build;
-
 
 
 /**
@@ -48,10 +46,6 @@ class OngoingNotification {
     static final String ONGOING_CONFERENCE_CHANNEL_ID = "JitsiOngoingConferenceChannel";
 
     static void createNotificationChannel(Activity context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            return;
-        }
-
         if (context == null) {
             JitsiMeetLogger.w(TAG + " Cannot create notification channel: no current context");
             return;
@@ -76,13 +70,13 @@ class OngoingNotification {
         notificationManager.createNotificationChannel(channel);
     }
 
-    static Notification buildOngoingConferenceNotification(Boolean isMuted, Context context) {
-
+    static Notification buildOngoingConferenceNotification(Boolean isMuted, Context context, Class tapBackActivity) {
         if (context == null) {
             JitsiMeetLogger.w(TAG + " Cannot create notification: no current context");
             return null;
         }
 
+// <<<<<<< HEAD
         Intent notificationIntent = new Intent("com.melp.ACTION_OPEN_CALL_HANDLER");
         notificationIntent.setPackage(context.getPackageName());
         notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -92,6 +86,10 @@ class OngoingNotification {
             notificationIntent, 
             PendingIntent.FLAG_IMMUTABLE
         );
+// =======
+//         Intent notificationIntent = new Intent(context, tapBackActivity == null ? context.getClass() : tapBackActivity);
+//         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
+// >>>>>>> stable/jitsi-meet_10314
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, ONGOING_CONFERENCE_CHANNEL_ID);
 

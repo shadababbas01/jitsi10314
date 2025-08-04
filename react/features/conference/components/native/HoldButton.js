@@ -31,10 +31,6 @@ var participantid;
 
 class HoldButton extends Component {
 
-    _onClick;
-    _isAudioMuted;
-    _setSpeakerOn;
-    _isHoldDisabled;
     _prevAudioMuted;
     _prevSpeakerOn;
 

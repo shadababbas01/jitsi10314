@@ -6,6 +6,7 @@ import {
     isSupported
 } from '../av-moderation/functions';
 import { IStateful } from '../base/app/types';
+import theme from '../base/components/themes/participantsPaneTheme.json';
 import { getCurrentConference } from '../base/conference/functions';
 import { INVITE_ENABLED, PARTICIPANTS_ENABLED } from '../base/flags/constants';
 import { getFeatureFlag } from '../base/flags/functions';
@@ -62,6 +63,10 @@ export function isForceMuted(participant: IParticipant | undefined, mediaType: M
 export function getParticipantAudioMediaState(participant: IParticipant | undefined,
         muted: Boolean, state: IReduxState) {
     const dominantSpeaker = getDominantSpeakerParticipant(state);
+
+    if (participant?.isSilent) {
+        return MEDIA_STATE.NONE;
+    }
 
     if (muted) {
         if (isForceMuted(participant, MEDIA_TYPE.AUDIO, state)) {
@@ -146,19 +151,20 @@ export function getQuickActionButtonType(
         state: IReduxState) {
     // handled only by moderators
     const isVideoForceMuted = isForceMuted(participant, MEDIA_TYPE.VIDEO, state);
+    const isParticipantSilent = participant?.isSilent || false;
 
     if (isLocalParticipantModerator(state)) {
-        if (!isAudioMuted) {
+        if (!isAudioMuted && !isParticipantSilent) {
             return QUICK_ACTION_BUTTON.MUTE;
         }
         if (!isVideoMuted) {
             return QUICK_ACTION_BUTTON.STOP_VIDEO;
         }
+        if (isSupported()(state) && !isParticipantSilent) {
+            return QUICK_ACTION_BUTTON.ASK_TO_UNMUTE;
+        }
         if (isVideoForceMuted) {
             return QUICK_ACTION_BUTTON.ALLOW_VIDEO;
-        }
-        if (isSupported()(state)) {
-            return QUICK_ACTION_BUTTON.ASK_TO_UNMUTE;
         }
     }
 
@@ -281,7 +287,7 @@ export const isMuteAllVisible = (state: IReduxState) => {
  * Returns true if renaming the currently joined breakout room is allowed and false otherwise.
  *
  * @param {IReduxState} state - The redux state.
- * @returns {boolean} - True if reanming the currently joined breakout room is allowed and false otherwise.
+ * @returns {boolean} - True if renaming the currently joined breakout room is allowed and false otherwise.
  */
 export function isCurrentRoomRenamable(state: IReduxState) {
     return isInBreakoutRoom(state) && isBreakoutRoomRenameAllowed(state);
@@ -315,3 +321,19 @@ export const isParticipantsPaneEnabled = (stateful: IStateful) => {
 
     return Boolean(getFeatureFlag(state, PARTICIPANTS_ENABLED, true) && enabled);
 };
+
+/**
+ * Returns the width of the participants pane based on its open state.
+ *
+ * @param {IReduxState} state - The Redux state object containing the application state.
+ * @returns {number} - The width of the participants pane in pixels when open, or 0 when closed.
+ */
+export function getParticipantsPaneWidth(state: IReduxState) {
+    const { isOpen } = getState(state);
+
+    if (isOpen) {
+        return theme.participantsPaneWidth;
+    }
+
+    return 0;
+}

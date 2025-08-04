@@ -1,10 +1,11 @@
-import _ from 'lodash';
+import { cloneDeep } from 'lodash-es';
 
 import { IReduxState, IStore } from '../../app/types';
 import { conferenceLeft, conferenceWillLeave, redirect } from '../conference/actions';
 import { getCurrentConference } from '../conference/functions';
 import { IConfigState } from '../config/reducer';
 import JitsiMeetJS, { JitsiConnectionEvents } from '../lib-jitsi-meet';
+import { isEmbedded } from '../util/embedUtils';
 import { parseURLParams } from '../util/parseURLParams';
 import {
     appendURLParam,
@@ -113,25 +114,19 @@ export function connectionFailed(
 export function constructOptions(state: IReduxState) {
     // Deep clone the options to make sure we don't modify the object in the
     // redux store.
-    const options: IOptions = _.cloneDeep(state['features/base/config']);
+    const options: IOptions = cloneDeep(state['features/base/config']);
 
     const { locationURL, preferVisitor } = state['features/base/connection'];
     const params = parseURLParams(locationURL || '');
     const iceServersOverride = params['iceServers.replace'];
 
-    if (iceServersOverride) {
+    // Allow iceServersOverride only when jitsi-meet is in an iframe.
+    if (isEmbedded() && iceServersOverride) {
         options.iceServersOverride = iceServersOverride;
     }
 
     const { bosh, preferBosh, flags } = options;
     let { websocket } = options;
-
-    // TESTING: Only enable WebSocket for some percentage of users.
-    if (websocket && navigator.product === 'ReactNative') {
-        if ((Math.random() * 100) >= (options?.testing?.mobileXmppWsThreshold ?? 0)) {
-            websocket = undefined;
-        }
-    }
 
     if (preferBosh) {
         websocket = undefined;

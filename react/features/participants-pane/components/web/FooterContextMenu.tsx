@@ -21,10 +21,7 @@ import {
     IconVideoOff
 } from '../../../base/icons/svg';
 import { MEDIA_TYPE } from '../../../base/media/constants';
-import {
-    getParticipantCount,
-    isEveryoneModerator
-} from '../../../base/participants/functions';
+import { getRaiseHandsQueue } from '../../../base/participants/functions';
 import { withPixelLineHeight } from '../../../base/styles/functions.web';
 import ContextMenu from '../../../base/ui/components/web/ContextMenu';
 import ContextMenuItemGroup from '../../../base/ui/components/web/ContextMenuItemGroup';
@@ -32,6 +29,7 @@ import { isInBreakoutRoom } from '../../../breakout-rooms/functions';
 import { openSettingsDialog } from '../../../settings/actions.web';
 import { SETTINGS_TABS } from '../../../settings/constants';
 import { shouldShowModeratorSettings } from '../../../settings/functions.web';
+import LowerHandButton from '../../../video-menu/components/web/LowerHandButton';
 import MuteEveryonesVideoDialog from '../../../video-menu/components/web/MuteEveryonesVideoDialog';
 
 const useStyles = makeStyles()(theme => {
@@ -85,9 +83,8 @@ interface IProps {
 export const FooterContextMenu = ({ isOpen, onDrawerClose, onMouseLeave }: IProps) => {
     const dispatch = useDispatch();
     const isModerationSupported = useSelector((state: IReduxState) => isAvModerationSupported()(state));
-    const allModerators = useSelector(isEveryoneModerator);
+    const raisedHandsQueue = useSelector(getRaiseHandsQueue);
     const isModeratorSettingsTabEnabled = useSelector(shouldShowModeratorSettings);
-    const participantCount = useSelector(getParticipantCount);
     const isAudioModerationEnabled = useSelector(isAvModerationEnabled(MEDIA_TYPE.AUDIO));
     const isVideoModerationEnabled = useSelector(isAvModerationEnabled(MEDIA_TYPE.VIDEO));
     const isBreakoutRoom = useSelector(isInBreakoutRoom);
@@ -147,7 +144,8 @@ export const FooterContextMenu = ({ isOpen, onDrawerClose, onMouseLeave }: IProp
                     onClick: muteAllVideo,
                     text: t('participantsPane.actions.stopEveryonesVideo')
                 } ] } />
-            {!isBreakoutRoom && isModerationSupported && (participantCount === 1 || !allModerators) && (
+            {raisedHandsQueue.length !== 0 && <LowerHandButton />}
+            {!isBreakoutRoom && isModerationSupported && (
                 <ContextMenuItemGroup actions = { actions }>
                     <div className = { classes.text }>
                         <span>{t('participantsPane.actions.allow')}</span>

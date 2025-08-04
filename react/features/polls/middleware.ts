@@ -4,7 +4,7 @@ import { getCurrentConference } from '../base/conference/functions';
 import MiddlewareRegistry from '../base/redux/MiddlewareRegistry';
 import StateListenerRegistry from '../base/redux/StateListenerRegistry';
 import { playSound } from '../base/sounds/actions';
-import { INCOMING_MSG_SOUND_ID } from '../chat/constants';
+import { ChatTabs, INCOMING_MSG_SOUND_ID } from '../chat/constants';
 import { arePollsDisabled } from '../conference/functions.any';
 import { showNotification } from '../notifications/actions';
 import { NOTIFICATION_TIMEOUT_TYPE, NOTIFICATION_TYPE } from '../notifications/constants';
@@ -19,21 +19,24 @@ import {
 import { IAnswer, IPoll, IPollData } from './types';
 
 /**
+ * The maximum number of answers a poll can have.
+ */
+const MAX_ANSWERS = 32;
+
+/**
  * Set up state change listener to perform maintenance tasks when the conference
  * is left or failed, e.g. Clear messages or close the chat modal if it's left
  * open.
  */
 StateListenerRegistry.register(
     state => getCurrentConference(state),
-    (conference, { dispatch }, previousConference) => {
+    (conference, { dispatch }, previousConference): void => {
         if (conference !== previousConference) {
-            // conference changed, left or failed...
-            // clean old polls
             dispatch(clearPolls());
         }
     });
 
-const parsePollData = (pollData: IPollData): IPoll | null => {
+const parsePollData = (pollData: Partial<IPollData>): IPoll | null => {
     if (typeof pollData !== 'object' || pollData === null) {
         return null;
     }
@@ -50,7 +53,9 @@ const parsePollData = (pollData: IPollData): IPoll | null => {
         question,
         showResults: true,
         lastVote: null,
-        answers
+        answers,
+        saved: false,
+        editing: false
     };
 };
 
@@ -91,7 +96,7 @@ MiddlewareRegistry.register(({ dispatch, getState }) => next => action => {
         }
 
         const isChatOpen: boolean = state['features/chat'].isOpen;
-        const isPollsTabFocused: boolean = state['features/chat'].isPollsTabFocused;
+        const isPollsTabFocused: boolean = state['features/chat'].focusedTab === ChatTabs.POLLS;
 
         // Finally, we notify user they received a new poll if their pane is not opened
         if (action.notify && (!isChatOpen || !isPollsTabFocused)) {
@@ -99,7 +104,6 @@ MiddlewareRegistry.register(({ dispatch, getState }) => next => action => {
         }
         break;
     }
-
     }
 
     return result;
@@ -120,8 +124,22 @@ function _handleReceivePollsMessage(data: any, dispatch: IStore['dispatch'], get
     }
 
     switch (data.type) {
+
     case COMMAND_NEW_POLL: {
-        const { question, answers, pollId, senderId } = data;
+        const { pollId, answers, senderId, question } = data;
+        const tmp = {
+            id: pollId,
+            answers,
+            question,
+            senderId
+        };
+
+        // Check integrity of the poll data.
+        // TODO(saghul): we should move this to the server side, likely by storing the
+        // poll data in the room metadata.
+        if (parsePollData(tmp) === null) {
+            return;
+        }
 
         const poll = {
             changingVote: false,
@@ -129,12 +147,14 @@ function _handleReceivePollsMessage(data: any, dispatch: IStore['dispatch'], get
             showResults: false,
             lastVote: null,
             question,
-            answers: answers.map((answer: IAnswer) => {
+            answers: answers.map((answer: string) => {
                 return {
                     name: answer,
                     voters: []
                 };
-            })
+            }).slice(0, MAX_ANSWERS),
+            saved: false,
+            editing: false
         };
 
         dispatch(receivePoll(pollId, poll, true));
@@ -153,7 +173,7 @@ function _handleReceivePollsMessage(data: any, dispatch: IStore['dispatch'], get
         const receivedAnswer: IAnswer = {
             voterId,
             pollId,
-            answers
+            answers: answers.slice(0, MAX_ANSWERS)
         };
 
         dispatch(receiveAnswer(pollId, receivedAnswer));

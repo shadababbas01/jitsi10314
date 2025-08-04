@@ -21,9 +21,15 @@ import { screen } from '../../../mobile/navigation/routes';
  * Implements an {@link AbstractButton} to open the breakout room screen.
  */
 class BreakoutRoomsButton extends AbstractButton<AbstractButtonProps> {
+// <<<<<<< HEAD
     accessibilityLabel = 'toolbar.accessibilityLabel.breakoutRooms';
     icon = IconRingGroup;
     label = 'toolbar.accessibilityLabel.breakoutRooms';
+// =======
+//     override accessibilityLabel = 'toolbar.accessibilityLabel.breakoutRooms';
+//     override icon = IconRingGroup;
+//     override label = 'breakoutRooms.buttonLabel';
+// >>>>>>> stable/jitsi-meet_10314
 
     /**
      * Handles clicking / pressing the button and opens the breakout rooms screen.
@@ -31,7 +37,7 @@ class BreakoutRoomsButton extends AbstractButton<AbstractButtonProps> {
      * @private
      * @returns {void}
      */
-    _handleClick() {
+    override _handleClick() {
         return navigate(screen.conference.breakoutRooms);
     }
 }

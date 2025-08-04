@@ -244,6 +244,7 @@ class VirtualBackgroundPreview extends PureComponent<IProps, IState> {
         return (
             <Video
                 className = { classes.previewVideo }
+                id = 'virtual_background_preview'
                 playsinline = { true }
                 videoTrack = {{ jitsiTrack: data }} />
         );
@@ -254,7 +255,7 @@ class VirtualBackgroundPreview extends PureComponent<IProps, IState> {
      *
      * @inheritdoc
      */
-    componentDidMount() {
+    override componentDidMount() {
         this._setTracks();
     }
 
@@ -263,7 +264,7 @@ class VirtualBackgroundPreview extends PureComponent<IProps, IState> {
      *
      * @inheritdoc
      */
-    componentWillUnmount() {
+    override componentWillUnmount() {
         this._componentWasUnmounted = true;
         this._stopStream(this.state.jitsiTrack);
     }
@@ -273,7 +274,7 @@ class VirtualBackgroundPreview extends PureComponent<IProps, IState> {
      *
      * @inheritdoc
      */
-    async componentDidUpdate(prevProps: IProps) {
+    override async componentDidUpdate(prevProps: IProps) {
         if (!equals(this.props.selectedVideoInputId, prevProps.selectedVideoInputId)) {
             this._setTracks();
         }
@@ -287,7 +288,7 @@ class VirtualBackgroundPreview extends PureComponent<IProps, IState> {
      *
      * @inheritdoc
      */
-    render() {
+    override render() {
         const { jitsiTrack } = this.state;
         const classes = withStyles.getClasses(this.props);
 

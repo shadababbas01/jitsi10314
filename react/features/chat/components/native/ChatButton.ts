@@ -33,10 +33,17 @@ interface IProps extends AbstractButtonProps {
  * Implements an {@link AbstractButton} to open the chat screen on mobile.
  */
 class ChatButton extends AbstractButton<IProps> {
+// <<<<<<< HEAD
     accessibilityLabel = 'toolbar.accessibilityLabel.chat';
     //icon = this.props.ismessage ? IconMessageDot:IconMessage;
     label = 'toolbar.chat';
     toggledIcon = IconMessage;
+// =======
+//     override accessibilityLabel = 'toolbar.accessibilityLabel.chat';
+//     override icon = IconMessage;
+//     override label = 'toolbar.chat';
+//     override toggledIcon = IconChatUnread;
+// >>>>>>> stable/jitsi-meet_10314
 
 
     get icon() {
@@ -53,11 +60,18 @@ class ChatButton extends AbstractButton<IProps> {
      * @private
      * @returns {void}
      */
+// <<<<<<< HEAD
     _handleClick() {
        // this.props._isPollsDisabled  ? navigate(screen.conference.chat) : navigate(screen.conference.chatandpolls.main);
        
        this.props.setMessagestate(false);
        NativeModules.NativeCallsNew.OpenChat();
+// =======
+//     override _handleClick() {
+        // this.props._isPollsDisabled
+        //     ? navigate(screen.conference.chat)
+        //     : navigate(screen.conference.chatandpolls.main);  // poll button Shadab 
+// >>>>>>> stable/jitsi-meet_10314
     }
 
     /**
@@ -66,7 +80,7 @@ class ChatButton extends AbstractButton<IProps> {
      * @protected
      * @returns {boolean}
      */
-    _isToggled() {
+    override _isToggled() {
         return Boolean(this.props._unreadMessageCount);
     }
     _getView(props) {
